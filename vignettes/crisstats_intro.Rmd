@@ -1,0 +1,222 @@
+---
+title: "Introduction to crisstats"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to crisstats}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Overview
+
+The `crisstats` package provides tools for analyzing university publication productivity from CRIS (Current Research Information System) data exports. This vignette demonstrates the typical workflow for analyzing publication data.
+
+```{r setup}
+library(crisstats)
+```
+
+## Reading CRIS Data
+
+The `read_cris_data()` function reads Excel files exported from a CRIS system:
+
+```{r eval=FALSE}
+# Read all Excel files from a folder
+data <- read_cris_data("Data/")
+
+# Read specific files
+data <- read_cris_data("Data/", pattern = "Publications_en_*.xlsx")
+
+# Read a single file
+data <- read_cris_data("publications.xlsx")
+```
+
+## Cleaning Author Data
+
+Author names in CRIS exports often contain artifacts that need cleaning:
+
+```{r eval=FALSE}
+# Clean and standardize author names
+cleaned <- clean_author_data(data)
+
+# This:
+# - Splits semicolon-separated authors into separate rows
+# - Removes "Jr." suffixes
+# - Removes leading year patterns like "(2024)."
+# - Converts to uppercase for consistent matching
+# - Optionally filters out "ET AL" entries
+```
+
+## Fractional Counting Methods
+
+The package supports 6 different methods for calculating author credit:
+
+| Method | Description | Use Case |
+|--------|-------------|----------|
+| Standard | Equal share (1/n) | Default bibliometric analysis |
+| Harmonic | 1/position weights | Emphasize first authors |
+| Proportional | Linear decrease | Moderate position emphasis |
+| First-Last | Bonus for first/last | Recognize key contributors |
+| Geometric | 0.5^position decay | Strong first-author emphasis |
+| Position Weighted | Custom weights | Flexible analysis |
+
+```{r eval=FALSE}
+# Compute fractional counts with specific methods
+frac <- compute_fractional_counts(
+  cleaned,
+  counting_methods = c("standard", "harmonic", "first_last")
+)
+```
+
+## Comprehensive Productivity Analysis
+
+The main analysis function generates multiple tables and metrics:
+
+```{r eval=FALSE}
+results <- generate_author_productivity_tables(
+  cleaned,
+  years = 2020:2024,
+  top_n = 50,
+  levels = c("1", "2", "3"),
+  counting_methods = c("standard", "harmonic", "first_last")
+)
+
+# Available outputs:
+# results$most_productive_overall     - gt table
+# results$most_productive_by_level    - list of gt tables by JUFO level
+# results$detailed_productivity       - gt table with level breakdown
+# results$author_positions            - gt table of position distribution
+# results$fractional_contributions    - gt table of fractional counts
+# results$comprehensive_analysis      - gt table with all metrics
+# results$raw_data                    - data frame for further analysis
+```
+
+## Publication Statistics
+
+Generate basic statistics and visualizations:
+
+```{r eval=FALSE}
+stats <- generate_publication_stats(cleaned)
+
+# Number of unique articles
+stats$n_articles
+
+# Average articles per author
+stats$avg_articles_per_author
+
+# Display plots
+print(stats$articles_per_year_barplot)
+print(stats$jufo_level_per_year_plot)
+```
+
+## Individual Author Analysis
+
+Analyze a specific author's publication history:
+
+```{r eval=FALSE}
+author <- analyze_author_publications(
+  cleaned,
+  author_name = "SMITH JOHN",
+  year_range = 2019:2024
+)
+
+# View the publication trend plot
+print(author$plot)
+
+# View the article list
+author$articles
+```
+
+## Unit-Level Analysis
+
+Analyze publication growth across university units:
+
+```{r eval=FALSE}
+unit_plots <- plot_unit_growth(
+  cleaned,
+  n_years = 5,
+  levels = c(1, 2, 3),
+  top_n = 10
+)
+
+# Publication counts by unit and year
+print(unit_plots$counts_plot)
+
+# Average growth rates
+print(unit_plots$growth_plot)
+
+# Yearly growth trends
+print(unit_plots$growth_line_plot)
+```
+
+## Unit Name Abbreviations
+
+For cleaner visualizations, abbreviate long unit names:
+
+```{r}
+# Get abbreviations
+abbrevs <- get_unit_abbreviations()
+head(abbrevs)
+
+# Abbreviate a vector of unit names
+units <- c("School of Computing", "Business School", "Unknown Unit")
+abbreviate_units(units)
+```
+
+```{r eval=FALSE}
+# Add abbreviated column to data
+cleaned <- add_unit_column(cleaned)
+```
+
+## Complete Workflow Example
+
+```{r eval=FALSE}
+library(crisstats)
+library(dplyr)
+
+# 1. Read and clean data
+data <- read_cris_data("Data/")
+cleaned <- clean_author_data(data)
+
+# 2. Filter to ranked publications
+cleaned <- cleaned %>%
+  filter(jufo_level_of_publication %in% c(1, 2, 3))
+
+# 3. Generate overall statistics
+stats <- generate_publication_stats(cleaned)
+print(stats$articles_per_year_barplot)
+
+# 4. Analyze author productivity
+results <- generate_author_productivity_tables(
+  cleaned,
+  years = 2020:2024,
+  top_n = 100
+)
+
+# 5. Export comprehensive table
+results$comprehensive_analysis
+
+# 6. Get raw data for custom analysis
+top_authors <- results$raw_data %>%
+  filter(Total_1n2n3 >= 10) %>%
+  select(Author, Total_1n2n3, First_Author_Count, Harmonic_Fractional)
+
+# 7. Analyze specific author
+my_author <- analyze_author_publications(
+  results$data_filtered,
+  "SAQR MOHAMMED",
+  year_range = 2020:2024
+)
+
+# 8. Unit growth analysis
+units <- plot_unit_growth(cleaned, n_years = 4, top_n = 15)
+print(units$counts_plot)
+```

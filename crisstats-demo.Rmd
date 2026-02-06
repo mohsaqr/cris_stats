@@ -1,0 +1,352 @@
+---
+title: "UEF Publication Statistics 2025"
+subtitle: "Comprehensive Analysis with crisstats"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+# Installation
+
+```{r install, eval=FALSE}
+# Install from GitHub
+devtools::install_github("mohsaqr/cris_stats")
+
+# Or install from local source
+devtools::install("path/to/cris_stats")
+```
+
+```{r load}
+library(crisstats)
+```
+
+# Load & Prepare Data
+
+```{r prepare-data, cache=TRUE}
+data <- process_data(
+  "/Users/mohammedsaqr/Documents/Documents X/DocumentsX/University3/Data/",
+  years = 2025
+)
+```
+
+```{r data-preview}
+cat("Rows:", nrow(data),
+    "| Unique publications:", length(unique(data$publication_id)),
+    "| Unique authors:", length(unique(data$Authorsclean)), "\n")
+```
+
+---
+
+# 1. University at a Glance
+
+## Overall Summary
+
+```{r describe-overall}
+desc <- describe(data)
+desc
+```
+
+## University Statistics
+
+```{r uni-stats}
+uni <- university_stats(data, years = 2025)
+uni$gt_table
+```
+
+## Publications by JUFO Level
+
+```{r uni-jufo-plot}
+uni$plots$jufo_trends
+```
+
+## Top Publication Venues
+
+Where does UEF research get published?
+
+```{r top-venues-table}
+tv <- top_venues(data, n = 20)
+tv$gt_table
+```
+
+```{r top-venues-plot, fig.height=8}
+tv$plot
+```
+
+---
+
+# 2. Authors
+
+## Top 20 Authors
+
+The most prolific researchers at UEF in 2025.
+
+```{r top-authors-table}
+ta <- top_authors(data, n = 20)
+ta$gt_table
+```
+
+```{r top-authors-plot, fig.height=8}
+ta$plot
+```
+
+## Productivity Analysis
+
+How is research output distributed across authors?
+
+```{r productivity-stats}
+prod <- productivity_stats(data, years = 2025, top_n = 20)
+prod
+```
+
+### Productivity Distribution
+
+```{r prod-histogram}
+plot(prod)
+```
+
+### Authorship Position Distribution
+
+```{r prod-positions, fig.height=8}
+plot(prod, "positions")
+```
+
+### Productivity Descriptives
+
+```{r prod-descriptives}
+summary(prod)
+```
+
+### Comprehensive Author Analysis
+
+```{r prod-comprehensive}
+prod$comprehensive_analysis
+```
+
+## Individual Author: Mohammed Saqr
+
+```{r author-stats}
+me <- author_stats(data, "Mohammed Saqr")
+me
+```
+
+### Publication List
+
+```{r author-gt}
+me$gt_table
+```
+
+### Publication Trend
+
+```{r author-trend}
+plot(me)
+```
+
+### JUFO Distribution
+
+```{r author-jufo}
+plot(me, "jufo")
+```
+
+### Author Descriptives
+
+```{r author-descriptives}
+summary(me)
+```
+
+---
+
+# 3. Departments
+
+## Overview by Department
+
+```{r describe-department}
+describe(data, by = "department")
+```
+
+## Top 20 Departments
+
+```{r top-departments-table}
+td <- top_departments(data, n = 20)
+td$gt_table
+```
+
+```{r top-departments-plot, fig.height=8}
+td$plot
+```
+
+## Department Comparison
+
+```{r department-stats}
+dept <- department_stats(data, top_n = 20)
+dept
+```
+
+### Department Table
+
+```{r department-gt}
+dept$gt_table
+```
+
+### Department Comparison Plot
+
+```{r dept-comparison, fig.height=8}
+plot(dept)
+```
+
+### JUFO Distribution by Department
+
+```{r dept-jufo, fig.height=8}
+plot(dept, "jufo")
+```
+
+### Department Descriptives
+
+```{r dept-descriptives}
+summary(dept)
+```
+
+---
+
+# 4. Faculties
+
+## Overview by Faculty
+
+```{r describe-faculty}
+describe(data, by = "faculty")
+```
+
+## Faculty Rankings
+
+```{r top-faculties-table}
+tf <- top_faculties(data)
+tf$gt_table
+```
+
+```{r top-faculties-plot}
+tf$plot
+```
+
+## Faculty Comparison
+
+```{r faculty-stats}
+fac <- faculty_stats(data)
+fac
+```
+
+### Faculty Table
+
+```{r faculty-gt}
+fac$gt_table
+```
+
+### Faculty Comparison Plot
+
+```{r faculty-comparison}
+plot(fac)
+```
+
+### JUFO Distribution by Faculty
+
+```{r faculty-jufo}
+plot(fac, "jufo")
+```
+
+### Faculty Descriptives
+
+```{r faculty-descriptives}
+summary(fac)
+```
+
+### Top Authors per Faculty
+
+```{r faculty-top-authors, results='asis'}
+for (fname in names(fac$top_authors)) {
+  auth <- fac$top_authors[[fname]]
+  if (!is.null(auth) && nrow(auth$table) > 0) {
+    cat("\n\n####", fname, "\n\n")
+    print(knitr::kable(head(auth$table, 10)))
+  }
+}
+```
+
+---
+
+# 5. Multi-Year Comparison
+
+Load data across multiple years and compare performance over time.
+
+```{r multi-year-data, cache=TRUE}
+data_all <- process_data(
+  "/Users/mohammedsaqr/Documents/Documents X/DocumentsX/University3/Data/",
+  years = 2020:2025
+)
+```
+
+## Faculty Trends
+
+```{r yearly-faculty}
+yf <- compare_years(data_all, "faculty")
+yf
+```
+
+```{r yearly-faculty-gt}
+yf$gt_table
+```
+
+```{r yearly-faculty-lines}
+plot(yf, "lines")
+```
+
+## Top 15 Authors Across Years
+
+```{r yearly-author}
+ya <- compare_years(data_all, "author", n = 15)
+ya
+```
+
+```{r yearly-author-heatmap, fig.height=8}
+plot(ya)
+```
+
+```{r yearly-author-gt}
+ya$gt_table
+```
+
+## Department Trends
+
+```{r yearly-department}
+yd <- compare_years(data_all, "department", n = 15)
+yd
+```
+
+```{r yearly-department-heatmap, fig.height=10}
+plot(yd)
+```
+
+```{r yearly-department-lines}
+plot(yd, "lines")
+```
+
+---
+
+# Session Info
+
+```{r session}
+sessionInfo()
+```

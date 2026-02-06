@@ -1,0 +1,43 @@
+Package: crisstats
+Title: University Publication Productivity Analysis
+Version: 0.2.0
+Authors@R:
+    person("Mohammed", "Saqr", , "mohammed.saqr@uef.fi", role = c("aut", "cre"))
+Description: Provides tools for analyzing university publication productivity
+    from CRIS (Current Research Information System) data exports. Features
+    one-stop data preparation with automatic organizational hierarchy mapping,
+    comprehensive report generation, flexible comparison functions with wildcard
+    pattern matching, and automatic visualization. Includes author productivity
+    analysis with multiple fractional counting methods, publication statistics,
+    and unit-level analysis. Designed for JUFO-ranked publications from Finnish
+    universities.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    tidyr,
+    stringr,
+    ggplot2,
+    gt,
+    janitor,
+    datawizard,
+    splitstackshape,
+    readxl,
+    scales,
+    rlang,
+    purrr,
+    stats,
+    tools
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+LazyData: true
+VignetteBuilder: knitr
+URL: https://github.com/mohsaqr/crisstats
+BugReports: https://github.com/mohsaqr/crisstats/issues
